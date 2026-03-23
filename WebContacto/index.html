@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agenda de Contactos</title>
+    <link rel="stylesheet" href="./style/style.css">
+
+</head>
+
+<body>
+
+    <header>
+        <h1>📱 Agenda Telefónica</h1>
+        <p>Gestiona tus contactos fácilmente</p>
+    </header>
+
+    <div class="container">
+
+        <div id="estadoAPI" class="estado"></div>
+
+        <div class="top-bar">
+            <input type="text" id="buscador" placeholder="🔍 Buscar contacto...">
+
+
+            <button onclick="buscarInteligente()">Buscar</button>
+
+            <button onclick="listarTodos()">Todos</button>
+        </div>
+
+        <div id="lista" class="lista"></div>
+
+    </div>
+
+    <script>
+        let APIActiva = true;
+
+        // Metodo Fetch para obtener datos de la API
+        async function getData() {
+            try {
+                const response = await fetch("http://localhost:8080/Contacto");
+
+                if (!response.ok) throw new Error("Error en la API");
+
+                const data = await response.json();
+
+                APIActiva = true; // ✅ API funciona
+                mostrarEstado();
+
+                mostrarContactos(data);
+
+            } catch (error) {
+                console.error(error);
+
+                APIActiva = false; // ❌ API caída
+                mostrarEstado();
+
+                document.getElementById("lista").innerHTML =
+                    "<p style='text-align:center'>🚫 API desactivada</p>";
+            }
+        }// Cierre Metodo Fetch
+
+        // Mostrar Contactos desde API
+        async function buscarInteligente() {
+            const valor = document.getElementById("buscador").value.trim();
+
+            if (!valor) {
+                listarTodos();
+                return;
+            }
+
+            try {
+                let url = "";
+
+                // ID
+                if (!isNaN(valor)) {
+                    url = `http://localhost:8080/Contacto/id/${valor}`;
+                    const res = await fetch(url);
+                    const data = await res.json();
+
+                    mostrarContactos([data]);
+                }
+                // Teléfono
+                if (!isNaN(valor)) {
+                    url = `http://localhost:8080/Contacto/telefono/${valor}`;
+                    const res = await fetch(url);
+                    const data = await res.json();
+                    mostrarContactos([data]);
+                }
+                // Nombre
+                else {
+                    url = `http://localhost:8080/Contacto/nombre/${valor}`;
+                    const res = await fetch(url);
+                    const data = await res.json();
+                    mostrarContactos(data);
+                }
+
+            } catch (error) {
+                console.error(error);
+            }
+        }//Cierre Buscar Inteligente
+
+        //Mostrar Estado
+        function mostrarEstado() {
+            const estado = document.getElementById("estadoAPI");
+
+            estado.textContent = APIActiva ? "✅️ API Activa" : "🚫 API Inactiva";
+            estado.className = APIActiva ? "estado activo" : "estado inactivo";
+        }//Cierre Mostrar Estado
+
+        //Mostrar Contactos
+        function mostrarContactos(contactos) {
+            const lista = document.getElementById("lista");
+            lista.innerHTML = "";
+
+            if (!contactos || contactos.length === 0 || contactos[0] == null) {
+                lista.innerHTML = "<p style='text-align:center'>⛔ No encontrado</p>";
+                return;
+            }
+
+            contactos.forEach(c => {
+                lista.innerHTML += `
+        <div class="contacto">
+            <div class="icono">☎️</div>
+            <div class="info">
+                <div class="nombre">${c.name}</div>
+                <div class="telefono">${c.phone}</div>
+                <div class="id">ID: ${c.id}</div>
+            </div>
+        </div>`;
+            });
+        }//Cierre Mostrar Contactos
+
+        // Mostrar Todos los Contactos
+        function listarTodos() {
+            if (APIActiva) {
+                getData();
+
+            } else {
+                document.getElementById("lista").innerHTML =
+                    "<p style='text-align:center'>API desactivada</p>";
+            }
+        }//Cierre
+
+        //Iniciar
+        mostrarEstado();
+        listarTodos();
+    </script>
+
+</body>
+
+</html>
